@@ -1,8 +1,10 @@
 from pygame import *
 from random import randint
+from time import sleep
 
 miss_enemy = 0
 score = 0
+boss_health = 20
 
 class GameSprite(sprite.Sprite):
     def __init__(self, player_image, player_x, player_y, size_x, size_y, player_speed):
@@ -38,16 +40,43 @@ class Enemy(GameSprite):
 class Bullet(GameSprite):
     def update(self):
         self.rect.y -= self.speed
+        if self.rect.y < 0:
+            self.kill()
+
+class Boss(GameSprite):
+    def update(self):
+        if score == 10:
+            if self.rect.y < 50:
+                self.rect.y += self.speed 
+
+            if self.rect.y >= 50:
+                if self.rect.x <= 100:
+                    self.direction = 'right'
+                if self.rect.x >= 600:
+                    self.direction = 'left'
+
+                if self.direction == 'left':
+                    self.rect.x -= self.speed
+                else:
+                    self.rect.x += self.speed
+
+    def fire(self):
+        b_bullet = Bullet('bullet.png', self.rect.centerx, self.rect.centery, 10, 10, 10)
+        b_bullets.add(b_bullet)
 
 bullets = sprite.Group()
 
 player = Player('rocket.png', 350, 450, 40, 40, 5)
 
-enemy1 = Enemy('ufo.png', randint(10, 690), randint(-250, 0), 40, 40, 2)
-enemy2 = Enemy('ufo.png', randint(10, 690), randint(-250, 0), 40, 40, 2)
-enemy3 = Enemy('ufo.png', randint(10, 690), randint(-250, 0), 40, 40, 2)
-enemy4 = Enemy('ufo.png', randint(10, 690), randint(-250, 0), 40, 40, 2)
-enemy5 = Enemy('ufo.png', randint(10, 690), randint(-250, 0), 40, 40, 2)
+b_bullets = sprite.Group()
+
+boss = Boss('ufo.png', 100, -120, 100, 100, 2)
+
+enemy1 = Enemy('ufo.png', randint(50, 650), randint(-250, 0), 40, 40, 1)
+enemy2 = Enemy('ufo.png', randint(50, 650), randint(-250, 0), 40, 40, 1)
+enemy3 = Enemy('ufo.png', randint(50, 650), randint(-250, 0), 40, 40, 1)
+enemy4 = Enemy('ufo.png', randint(50, 650), randint(-250, 0), 40, 40, 1)
+enemy5 = Enemy('ufo.png', randint(50, 650), randint(-250, 0), 40, 40, 1)
 
 monsters = sprite.Group()
 monsters.add(enemy1)
@@ -83,13 +112,15 @@ while game:
             game = False
 
         if e.type == KEYDOWN:
-			if e.key == K_SPACE:
+            if e.key == K_SPACE:
                 bullet_s.play()
+                player.fire()
 
     if finish != True:
 
         score_count = font2.render('Счет:' + str(score), True,  (255, 215, 0))
         miss_count = font2.render('Пропущено:' + str(miss_enemy), True,  (255, 215, 0))
+        boss_health_font = font2.render('HP босса:' + str(boss_health), True, (255, 215, 0))
 
         win = font1.render('U WIN', True, (255, 215, 0))
         lose = font1.render('U LOSE', True, (255, 215, 0))
@@ -106,6 +137,20 @@ while game:
 
         bullets.update()
         bullets.draw(window)
+
+        boss.update()
+        boss.reset()
+
+        b_bullets.update()
+        b_bullets.draw(window)
+
+        '''if boss_health > 0:
+            boss.fire()
+            time.sleep(1)'''
+        
+        if score == 10:
+            boss = Boss('ufo.png', 100, -120, 100, 100, 2)
+            window.blit(boss_health_font, (150, 0))
         
         if miss_enemy == 3:
             finish = True
@@ -115,9 +160,19 @@ while game:
             finish = True
             window.blit(lose, (200, 200))
 
+        if sprite.spritecollide(bullets, boss, True, False):
+            boss_health -= 1
+            if boss_health == 0:
+                window.blit(win, (200, 200))
+                boss.kill()
+
+        if sprite.spritecollide(player, b_bullets, False):
+            finish = True
+            window.blit(lose, (200, 200))
+
         collides = sprite.groupcollide(monsters, bullets, True, True)
         for c in collides:
-            enemy = Enemy('ufo.png', randint(10, 690), randint(-250, 0), 40, 40, 2)
+            enemy = Enemy('ufo.png', randint(50, 650), randint(-250, 0), 40, 40, 1)
             monsters.add(enemy)
             score += 1
 
